@@ -538,12 +538,7 @@ function advancePhase(state: GameState): void {
 function determineWinner(state: GameState): void {
   const activePlayers = state.players.filter(p => !p.isFolded);
 
-  if (activePlayers.length === 1) {
-    endHand(state, activePlayers[0]);
-    return;
-  }
-
-  // 计算每个玩家的手牌强度
+  // 计算每个玩家的手牌强度（无论有多少活跃玩家都要填充showdownHands）
   state.showdownHands = activePlayers.map(player => ({
     player,
     hand: evaluateHand(player.holeCards, state.communityCards),
@@ -554,6 +549,13 @@ function determineWinner(state: GameState): void {
   state.showdownHands.sort((a, b) => compareHands(b.hand, a.hand));
 
   const winner = state.showdownHands[0].player;
+
+  if (activePlayers.length === 1) {
+    // 单玩家时仍然调用endHand，但showdownHands已经被填充
+    endHand(state, winner);
+    return;
+  }
+
   endHand(state, winner);
 }
 
