@@ -194,7 +194,6 @@ function isBettingRoundComplete(state: GameState): boolean {
 
   // 只有1人或0人，轮次结束
   if (activePlayers.length <= 1) {
-    console.log('[isBettingRoundComplete] true - only', activePlayers.length, 'active players');
     return true;
   }
 
@@ -208,12 +207,7 @@ function isBettingRoundComplete(state: GameState): boolean {
   // 全下玩家也算已行动
   const allActivePlayersActed = activePlayers.every(p => p.hasActed || p.isAllIn);
 
-  if (allHaveEqualBet && (allCanBetPlayersActed || allActivePlayersActed)) {
-    console.log('[isBettingRoundComplete] true - allEqualBet:', allHaveEqualBet, 'allCanBetPlayersActed:', allCanBetPlayersActed, 'allActivePlayersActed:', allActivePlayersActed, 'currentBet:', state.currentBet, 'players:', activePlayers.map(p => ({ n: p.name, b: p.currentBet, a: p.hasActed, allIn: p.isAllIn })));
-    return true;
-  }
-  console.log('[isBettingRoundComplete] false - allEqualBet:', allHaveEqualBet, 'allCanBetPlayersActed:', allCanBetPlayersActed, 'allActivePlayersActed:', allActivePlayersActed, 'currentBet:', state.currentBet, 'players:', activePlayers.map(p => ({ n: p.name, b: p.currentBet, a: p.hasActed, allIn: p.isAllIn })));
-  return false;
+  return allHaveEqualBet && (allCanBetPlayersActed || allActivePlayersActed);
 }
 
 // 获取下一个未弃牌且有筹码的玩家索引
@@ -296,7 +290,6 @@ export function startNewHand(state: GameState): GameState {
 // 执行玩家动作
 export function executePlayerAction(state: GameState, action: GameAction): GameState {
   const player = state.players[state.actionIndex];
-  console.log(`[executePlayerAction] ${player.name} -> ${action.type}${action.amount ? ' $' + action.amount : ''}, currentBet=${state.currentBet}, player.currentBet=${player.currentBet}, pot=${state.pot}`);
 
   // 标记玩家已行动
   player.hasActed = true;
@@ -412,10 +405,8 @@ export function executeAIAction(state: GameState): GameState {
 
 // 移动到下一个玩家
 function moveToNextPlayer(state: GameState): void {
-  console.log('[moveToNextPlayer] called, actionIndex:', state.actionIndex, 'phase:', state.phase);
   // 获取所有未弃牌玩家（包括全下的）
   const activePlayers = state.players.filter(p => !p.isFolded);
-  console.log('[moveToNextPlayer] activePlayers:', activePlayers.map(p => p.name));
 
   // 检查是否只剩一人
   if (activePlayers.length === 1) {
@@ -451,7 +442,6 @@ function moveToNextPlayer(state: GameState): void {
 
 // 进入下一阶段
 function advancePhase(state: GameState): void {
-  console.log('[advancePhase] from', state.phase, '-> called');
   // 重置下注状态
   resetBettingRound(state);
 

@@ -61,10 +61,24 @@ export function PokerTable() {
 
       const timer = setTimeout(() => {
         const currentPlayer = players[gameState.actionIndex];
-        const actionName = availableActions?.canCheck ? 'Check' :
-          availableActions?.canCall ? `Call $${availableActions.callAmount}` :
-          availableActions?.canRaise ? `Raise $${betAmount}` :
-          availableActions?.canAllIn ? 'All-In' : 'Fold';
+        let actionName: string;
+
+        if (currentPlayer?.isAI) {
+          // 计算AI自己需要跟注的金额（不是人类玩家的availableActions）
+          const aiToCall = Math.max(0, gameState.currentBet - currentPlayer.currentBet);
+          if (aiToCall === 0) {
+            actionName = 'Check';
+          } else if (aiToCall <= currentPlayer.chips) {
+            actionName = `Call $${aiToCall}`;
+          } else {
+            actionName = 'All-In';
+          }
+        } else {
+          actionName = availableActions?.canCheck ? 'Check' :
+            availableActions?.canCall ? `Call $${availableActions.callAmount}` :
+            availableActions?.canRaise ? `Raise $${betAmount}` :
+            availableActions?.canAllIn ? 'All-In' : 'Fold';
+        }
 
         if (currentPlayer?.isAI) {
           showToast(currentPlayer.name, actionName);

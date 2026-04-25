@@ -57,10 +57,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const runAIAction = useCallback(() => {
     setGameState(prev => {
       if (prev.isPlayerTurn || prev.phase === 'END' || prev.phase === 'SETUP') {
-        console.log('[GameContext] runAIAction skipped - isPlayerTurn:', prev.isPlayerTurn, 'phase:', prev.phase);
         return prev;
       }
-      console.log('[GameContext] runAIAction executing...');
       return executeAIAction({ ...prev });
     });
   }, []);
