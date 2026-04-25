@@ -20,7 +20,7 @@ test('setup page - game configuration and start', async ({ page }) => {
   // Should navigate to game page with poker elements
   await page.waitForURL('**/game', { timeout: 10000 });
   await expect(page.locator('text=Total Pot')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('text=Pre-Flop')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('text=Pre-Flop').first()).toBeVisible({ timeout: 5000 });
 });
 
 // Test 2: Game page renders poker table with all elements
@@ -31,13 +31,13 @@ test('game page - poker table renders correctly', async ({ page }) => {
 
   // Core table elements
   await expect(page.locator('text=Total Pot')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('text=Pre-Flop')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('text=Pre-Flop').first()).toBeVisible({ timeout: 5000 });
 
   // Player info
   await expect(page.locator('text=You')).toBeVisible({ timeout: 5000 });
 
   // AI opponents should be visible
-  await expect(page.locator('text=ZENITH_v4')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('text=ZENITH_v4').first()).toBeVisible({ timeout: 5000 });
 });
 
 // Test 3: Action buttons display based on player turn
@@ -152,7 +152,7 @@ test('game page - phase indicator and pot display work', async ({ page }) => {
   await page.waitForURL('**/game', { timeout: 10000 });
 
   // Should show Pre-Flop initially
-  await expect(page.locator('text=Pre-Flop')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('text=Pre-Flop').first()).toBeVisible({ timeout: 5000 });
 
   // Pot should display a value (starts with blinds 50+100=150)
   await expect(page.locator('text=Total Pot')).toBeVisible();

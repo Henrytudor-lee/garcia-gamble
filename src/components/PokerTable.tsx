@@ -17,7 +17,7 @@ export function PokerTable() {
   const [thinkingPlayerIndex, setThinkingPlayerIndex] = useState<number | null>(null);
   const [actionLog, setActionLog] = useState<{ id: number; round: number; phase: string; player: string; action: string; amount?: number; isEvent?: boolean }[]>([]);
   const logIdRef = useRef(0);
-  const prevPhaseRef = useRef(gameState.phase);
+  const prevPhaseRef = useRef<string>('SETUP');
   const bettingRoundRef = useRef(0);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
