@@ -144,9 +144,8 @@ export function PokerTable() {
       }
     }
 
-    // 记录 PRE_FLOP 阶段小盲和大盲下注（只在第一次进入 PRE_FLOP 时）
-    if (phase === 'PRE_FLOP' && prevPhase === 'SETUP') {
-      // 庄家移位后第一次进入 PRE_FLOP，记录盲注
+    // 记录盲注（每次进入 PRE_FLOP 时）
+    if (phase === 'PRE_FLOP' && (prevPhase === 'SETUP' || prevPhase === 'END')) {
       const sb = gameState.players[gameState.smallBlindIndex];
       const bb = gameState.players[gameState.bigBlindIndex];
       if (sb && bb) {
