@@ -199,13 +199,22 @@ function isBettingRoundComplete(state: GameState): boolean {
 
   // 获取还能继续下注的玩家（未弃牌且未全下）
   const canStillBetPlayers = state.players.filter(p => !p.isFolded && !p.isAllIn);
+  // 获取所有活跃玩家（包括全下的）- 用于检测是否还有人需要下注
+  const allActivePlayers = state.players.filter(p => !p.isFolded);
 
-  // 所有未弃牌玩家的 currentBet 都相等
-  const allHaveEqualBet = activePlayers.every(p => p.currentBet === state.currentBet);
+  // 所有还能下注的玩家的 currentBet 都相等
+  // 注意：all-in 玩家的 bet 不会重置（resetBettingRound 时不重置他们的 bet），
+  // 所以不能把他们算进 allHaveEqualBet 检查
+  const allHaveEqualBet = canStillBetPlayers.length === 0 ||
+    canStillBetPlayers.every(p => p.currentBet === state.currentBet);
+
   // 所有还能下注的玩家都已行动（已行动或已全下）
-  const allCanBetPlayersActed = canStillBetPlayers.every(p => p.hasActed || p.isAllIn);
+  const allCanBetPlayersActed = canStillBetPlayers.length === 0 ||
+    canStillBetPlayers.every(p => p.hasActed || p.isAllIn);
+
   // 全下玩家也算已行动
-  const allActivePlayersActed = activePlayers.every(p => p.hasActed || p.isAllIn);
+  const allActivePlayersActed = allActivePlayers.length <= 1 ||
+    allActivePlayers.every(p => p.hasActed || p.isAllIn);
 
   return allHaveEqualBet && (allCanBetPlayersActed || allActivePlayersActed);
 }
@@ -405,8 +414,10 @@ export function executeAIAction(state: GameState): GameState {
 
 // 移动到下一个玩家
 function moveToNextPlayer(state: GameState): void {
+  console.log('[moveToNextPlayer] actionIndex=', state.actionIndex, 'phase=', state.phase);
   // 获取所有未弃牌玩家（包括全下的）
   const activePlayers = state.players.filter(p => !p.isFolded);
+  console.log('[moveToNextPlayer] activePlayers count=', activePlayers.length);
 
   // 检查是否只剩一人
   if (activePlayers.length === 1) {
@@ -442,6 +453,7 @@ function moveToNextPlayer(state: GameState): void {
 
 // 进入下一阶段
 function advancePhase(state: GameState): void {
+  console.log('[advancePhase] called, current phase:', state.phase, 'communityCards:', state.communityCards.length);
   // 重置下注状态
   resetBettingRound(state);
 
@@ -501,13 +513,25 @@ function advancePhase(state: GameState): void {
   }
 
   // 设置第一个行动玩家（庄家左手边未弃牌玩家）
-  state.actionIndex = getFirstActorIndex(state);
-  if (state.actionIndex === -1) {
-    endHand(state, state.players.find(p => !p.isFolded)!);
+  // 注意：全下玩家 chips=0，会被 getNextActivePlayerIndex 跳过
+  // 如果所有玩家都是全下（返回-1），说明所有玩家都等待摊牌
+  const firstActor = getFirstActorIndex(state);
+
+  if (firstActor === -1) {
+    // 所有活跃玩家都是全下，没有人有筹码继续下注
+    // 直接进入SHOWDOWN比较手牌
+    // 确保发完所有公共牌
+    while (state.communityCards.length < 5) {
+      if (state.deck.length > 0) state.burnedCards.push(state.deck.pop()!);
+      if (state.deck.length > 0) state.communityCards.push(state.deck.pop()!);
+    }
+    state.phase = 'SHOWDOWN';
+    determineWinner(state);
     return;
   }
 
-  state.isPlayerTurn = !state.players[state.actionIndex].isAI;
+  state.actionIndex = firstActor;
+  state.isPlayerTurn = !state.players[firstActor].isAI;
 }
 
 // 判定获胜者

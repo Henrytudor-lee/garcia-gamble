@@ -148,7 +148,38 @@ export function PokerTable() {
 
       // 记录阶段变化事件
       if (phase === 'FLOP' || phase === 'TURN' || phase === 'RIVER' || phase === 'SHOWDOWN') {
-        addLog('System', `${getPhaseLabel()}`, undefined, true);
+        // 生成公共牌详细信息
+        let cardInfo = '';
+        if (phase === 'FLOP' && communityCards.length >= 3) {
+          const flopCards = communityCards.slice(0, 3).map(c => {
+            const d = { rank: '', suit: '', color: '' };
+            const suitSymbols: Record<string, string> = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
+            const rankDisplay: Record<string, string> = { '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', 'T': '10', 'J': 'J', 'Q': 'Q', 'K': 'K', 'A': 'A' };
+            d.rank = rankDisplay[c.rank] || c.rank;
+            d.suit = suitSymbols[c.suit] || c.suit;
+            d.color = c.suit === 'hearts' || c.suit === 'diamonds' ? '♦♥' : '♣♠';
+            return `${d.rank}${d.suit}`;
+          });
+          cardInfo = ` [${flopCards.join(' ')}]`;
+        } else if (phase === 'TURN' && communityCards.length >= 4) {
+          const turnCard = communityCards[3];
+          const suitSymbols: Record<string, string> = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
+          const rankDisplay: Record<string, string> = { '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', 'T': '10', 'J': 'J', 'Q': 'Q', 'K': 'K', 'A': 'A' };
+          cardInfo = ` [Turn: ${rankDisplay[turnCard.rank]}${suitSymbols[turnCard.suit]}]`;
+        } else if (phase === 'RIVER' && communityCards.length >= 5) {
+          const riverCard = communityCards[4];
+          const suitSymbols: Record<string, string> = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
+          const rankDisplay: Record<string, string> = { '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', 'T': '10', 'J': 'J', 'Q': 'Q', 'K': 'K', 'A': 'A' };
+          cardInfo = ` [River: ${rankDisplay[riverCard.rank]}${suitSymbols[riverCard.suit]}]`;
+        } else if (phase === 'SHOWDOWN') {
+          const allCards = communityCards.map(c => {
+            const suitSymbols: Record<string, string> = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
+            const rankDisplay: Record<string, string> = { '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', 'T': '10', 'J': 'J', 'Q': 'Q', 'K': 'K', 'A': 'A' };
+            return `${rankDisplay[c.rank]}${suitSymbols[c.suit]}`;
+          });
+          cardInfo = ` [Board: ${allCards.join(' ')}]`;
+        }
+        addLog('System', `${getPhaseLabel()}${cardInfo}`, undefined, true);
       }
 
       // 记录游戏结束
@@ -319,7 +350,7 @@ export function PokerTable() {
               </div>
               {/* Thinking animation */}
               {thinkingPlayerIndex === 1 && !opponentInfo[0]?.isFolded && (
-                <div className="absolute inset-0 rounded-full border-4 border-primary animate-ping opacity-75"></div>
+                <div className="thinking-ring"></div>
               )}
               {opponentInfo[0]?.isAllIn && (
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
@@ -355,7 +386,7 @@ export function PokerTable() {
               </div>
               {/* Thinking animation */}
               {thinkingPlayerIndex === 2 && !opponentInfo[1]?.isFolded && (
-                <div className="absolute inset-0 rounded-full border-4 border-primary animate-ping opacity-75"></div>
+                <div className="thinking-ring"></div>
               )}
               {opponentInfo[1]?.isAllIn && (
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
@@ -391,7 +422,7 @@ export function PokerTable() {
               </div>
               {/* Thinking animation */}
               {thinkingPlayerIndex === 3 && !opponentInfo[2]?.isFolded && (
-                <div className="absolute inset-0 rounded-full border-4 border-primary animate-ping opacity-75"></div>
+                <div className="thinking-ring"></div>
               )}
               {opponentInfo[2]?.isAllIn && (
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
@@ -418,7 +449,7 @@ export function PokerTable() {
               </div>
               {/* Thinking animation */}
               {thinkingPlayerIndex === 4 && !opponentInfo[3]?.isFolded && (
-                <div className="absolute inset-0 rounded-full border-4 border-primary animate-ping opacity-75"></div>
+                <div className="thinking-ring"></div>
               )}
               {opponentInfo[3]?.isAllIn && (
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
@@ -449,7 +480,7 @@ export function PokerTable() {
               </div>
               {/* Thinking animation */}
               {thinkingPlayerIndex === 5 && !opponentInfo[4]?.isFolded && (
-                <div className="absolute inset-0 rounded-full border-4 border-primary animate-ping opacity-75"></div>
+                <div className="thinking-ring"></div>
               )}
               {opponentInfo[4]?.isAllIn && (
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
@@ -600,7 +631,7 @@ export function PokerTable() {
           <div className="w-full max-w-5xl glass-panel border border-white/5 rounded-t-3xl p-6 flex items-center justify-between pointer-events-auto shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
             {/* Betting Slider Section */}
             {availableActions && (
-              <div className="w-1/4 flex flex-col space-y-3">
+              <div className={`w-1/4 flex flex-col space-y-3 ${!isPlayerTurn ? 'opacity-50' : ''}`}>
                 <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
                   <span>Min: ${availableActions.minRaise}</span>
                   <span>Max: ${availableActions.maxRaise}</span>
@@ -611,7 +642,8 @@ export function PokerTable() {
                   max={availableActions.maxRaise}
                   value={betAmount}
                   onChange={(e) => setBetAmount(parseInt(e.target.value))}
-                  className="w-full h-2 bg-surface-container-lowest rounded-full appearance-none cursor-pointer"
+                  disabled={!isPlayerTurn}
+                  className={`w-full h-2 bg-surface-container-lowest rounded-full appearance-none ${isPlayerTurn ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                   style={{
                     background: `linear-gradient(to right, #e9c349 0%, #e9c349 ${((betAmount - availableActions.minRaise) / (availableActions.maxRaise - availableActions.minRaise)) * 100}%, #0e0e0e ${((betAmount - availableActions.minRaise) / (availableActions.maxRaise - availableActions.minRaise)) * 100}%, #0e0e0e 100%)`
                   }}
@@ -626,7 +658,8 @@ export function PokerTable() {
               {availableActions && (
                 <button
                   onClick={handleFold}
-                  className="px-8 py-4 bg-surface-container-highest text-on-surface rounded-xl font-headline font-bold text-sm border border-outline-variant/20 hover:bg-surface-bright transition-all active:scale-95"
+                  disabled={!isPlayerTurn}
+                  className={`px-8 py-4 bg-surface-container-highest text-on-surface rounded-xl font-headline font-bold text-sm border border-outline-variant/20 transition-all ${isPlayerTurn ? 'hover:bg-surface-bright active:scale-95 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                 >
                   Fold
                 </button>
@@ -635,7 +668,8 @@ export function PokerTable() {
               {availableActions?.canCheck && (
                 <button
                   onClick={handleCheck}
-                  className="px-8 py-4 bg-surface-container-highest text-on-surface rounded-xl font-headline font-bold text-sm border border-outline-variant/20 hover:bg-surface-bright transition-all active:scale-95"
+                  disabled={!isPlayerTurn}
+                  className={`px-8 py-4 bg-surface-container-highest text-on-surface rounded-xl font-headline font-bold text-sm border border-outline-variant/20 transition-all ${isPlayerTurn ? 'hover:bg-surface-bright active:scale-95 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                 >
                   Check
                 </button>
@@ -644,7 +678,8 @@ export function PokerTable() {
               {availableActions?.canCall && (
                 <button
                   onClick={handleCall}
-                  className="px-8 py-4 bg-primary-container text-primary rounded-xl font-headline font-bold text-sm border border-primary/20 hover:bg-primary/20 transition-all active:scale-95"
+                  disabled={!isPlayerTurn}
+                  className={`px-8 py-4 bg-primary-container text-primary rounded-xl font-headline font-bold text-sm border border-primary/20 transition-all ${isPlayerTurn ? 'hover:bg-primary/20 active:scale-95 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                 >
                   Call ${availableActions.callAmount}
                 </button>
@@ -653,7 +688,8 @@ export function PokerTable() {
               {availableActions?.canRaise && (
                 <button
                   onClick={handleRaise}
-                  className="px-10 py-4 gold-gradient text-on-primary rounded-xl font-headline font-black text-sm shadow-[0_8px_20px_rgba(233,195,73,0.2)] active:scale-95 transition-all uppercase tracking-widest"
+                  disabled={!isPlayerTurn}
+                  className={`px-10 py-4 gold-gradient text-on-primary rounded-xl font-headline font-black text-sm shadow-[0_8px_20px_rgba(233,195,73,0.2)] transition-all uppercase tracking-widest ${isPlayerTurn ? 'active:scale-95 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                 >
                   Raise To ${betAmount.toLocaleString()}
                 </button>
@@ -662,7 +698,8 @@ export function PokerTable() {
               {availableActions?.canAllIn && (
                 <button
                   onClick={handleAllIn}
-                  className="px-8 py-4 bg-error-container text-error rounded-xl font-headline font-bold text-sm border border-error/20 hover:bg-error/20 transition-all active:scale-95"
+                  disabled={!isPlayerTurn}
+                  className={`px-8 py-4 bg-error-container text-error rounded-xl font-headline font-bold text-sm border border-error/20 transition-all ${isPlayerTurn ? 'hover:bg-error/20 active:scale-95 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                 >
                   All-In ${player.chips.toLocaleString()}
                 </button>
