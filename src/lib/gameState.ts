@@ -189,19 +189,31 @@ function getMaxRaiseAmount(state: GameState, player: Player): number {
 
 // 检查下注轮是否结束
 function isBettingRoundComplete(state: GameState): boolean {
-  // 获取所有活跃玩家（未弃牌、未全下）
-  const activePlayers = state.players.filter(p => !p.isFolded && !p.isAllIn);
+  // 获取所有未弃牌玩家（包括全下的 - 全下玩家也算活跃）
+  const activePlayers = state.players.filter(p => !p.isFolded);
 
   // 只有1人或0人，轮次结束
   if (activePlayers.length <= 1) {
+    console.log('[isBettingRoundComplete] true - only', activePlayers.length, 'active players');
     return true;
   }
 
-  // 所有活跃玩家的 currentBet 都相等，且都已行动
-  const allHaveEqualBet = activePlayers.every(p => p.currentBet === state.currentBet);
-  const allHaveActed = activePlayers.every(p => p.hasActed);
+  // 获取还能继续下注的玩家（未弃牌且未全下）
+  const canStillBetPlayers = state.players.filter(p => !p.isFolded && !p.isAllIn);
 
-  return allHaveEqualBet && allHaveActed;
+  // 所有未弃牌玩家的 currentBet 都相等
+  const allHaveEqualBet = activePlayers.every(p => p.currentBet === state.currentBet);
+  // 所有还能下注的玩家都已行动（已行动或已全下）
+  const allCanBetPlayersActed = canStillBetPlayers.every(p => p.hasActed || p.isAllIn);
+  // 全下玩家也算已行动
+  const allActivePlayersActed = activePlayers.every(p => p.hasActed || p.isAllIn);
+
+  if (allHaveEqualBet && (allCanBetPlayersActed || allActivePlayersActed)) {
+    console.log('[isBettingRoundComplete] true - allEqualBet:', allHaveEqualBet, 'allCanBetPlayersActed:', allCanBetPlayersActed, 'allActivePlayersActed:', allActivePlayersActed, 'currentBet:', state.currentBet, 'players:', activePlayers.map(p => ({ n: p.name, b: p.currentBet, a: p.hasActed, allIn: p.isAllIn })));
+    return true;
+  }
+  console.log('[isBettingRoundComplete] false - allEqualBet:', allHaveEqualBet, 'allCanBetPlayersActed:', allCanBetPlayersActed, 'allActivePlayersActed:', allActivePlayersActed, 'currentBet:', state.currentBet, 'players:', activePlayers.map(p => ({ n: p.name, b: p.currentBet, a: p.hasActed, allIn: p.isAllIn })));
+  return false;
 }
 
 // 获取下一个未弃牌且有筹码的玩家索引
@@ -284,6 +296,7 @@ export function startNewHand(state: GameState): GameState {
 // 执行玩家动作
 export function executePlayerAction(state: GameState, action: GameAction): GameState {
   const player = state.players[state.actionIndex];
+  console.log(`[executePlayerAction] ${player.name} -> ${action.type}${action.amount ? ' $' + action.amount : ''}, currentBet=${state.currentBet}, player.currentBet=${player.currentBet}, pot=${state.pot}`);
 
   // 标记玩家已行动
   player.hasActed = true;
@@ -399,8 +412,10 @@ export function executeAIAction(state: GameState): GameState {
 
 // 移动到下一个玩家
 function moveToNextPlayer(state: GameState): void {
+  console.log('[moveToNextPlayer] called, actionIndex:', state.actionIndex, 'phase:', state.phase);
   // 获取所有未弃牌玩家（包括全下的）
   const activePlayers = state.players.filter(p => !p.isFolded);
+  console.log('[moveToNextPlayer] activePlayers:', activePlayers.map(p => p.name));
 
   // 检查是否只剩一人
   if (activePlayers.length === 1) {
@@ -430,12 +445,15 @@ function moveToNextPlayer(state: GameState): void {
   }
 
   state.actionIndex = nextIndex;
+  console.log('[moveToNextPlayer] SET actionIndex to', nextIndex, 'player:', state.players[nextIndex]?.name);
   const currentPlayer = state.players[nextIndex];
   state.isPlayerTurn = !currentPlayer.isAI;
+  console.log('[moveToNextPlayer] isPlayerTurn:', state.isPlayerTurn, '(isAI:', currentPlayer.isAI, ')');
 }
 
 // 进入下一阶段
 function advancePhase(state: GameState): void {
+  console.log('[advancePhase] from', state.phase, '-> called');
   // 重置下注状态
   resetBettingRound(state);
 
