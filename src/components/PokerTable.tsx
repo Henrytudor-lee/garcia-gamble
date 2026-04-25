@@ -6,7 +6,7 @@ import { useGame } from '@/lib/GameContext';
 import { Navigation } from './Navigation';
 import { Card, CardHand, CommunityCards } from './Card';
 import { getHandDescription } from '@/lib/poker';
-import { getPersonalityDescription } from '@/lib/ai';
+import { getPersonalityDescription, getAIDecision } from '@/lib/ai';
 
 export function PokerTable() {
   const router = useRouter();
@@ -61,26 +61,42 @@ export function PokerTable() {
 
       const timer = setTimeout(() => {
         const currentPlayer = players[gameState.actionIndex];
-        let actionName: string;
-
         if (currentPlayer?.isAI) {
-          // 计算AI自己需要跟注的金额（不是人类玩家的availableActions）
+          // 重要：先计算 AI 实际决定，再显示 toast
+          // 不能基于 aiToCall 猜测，因为 AI 可能 fold
           const aiToCall = Math.max(0, gameState.currentBet - currentPlayer.currentBet);
-          if (aiToCall === 0) {
-            actionName = 'Check';
-          } else if (aiToCall <= currentPlayer.chips) {
-            actionName = `Call $${aiToCall}`;
-          } else {
-            actionName = 'All-In';
-          }
-        } else {
-          actionName = availableActions?.canCheck ? 'Check' :
-            availableActions?.canCall ? `Call $${availableActions.callAmount}` :
-            availableActions?.canRaise ? `Raise $${betAmount}` :
-            availableActions?.canAllIn ? 'All-In' : 'Fold';
-        }
+          const minRaise = gameState.minRaise;
+          const maxRaise = currentPlayer.chips;
+          const activeOpponents = players.filter(p => !p.isFolded && p.id !== currentPlayer.id).length;
+          const isPreFlop = phase === 'PRE_FLOP';
 
-        if (currentPlayer?.isAI) {
+          // 使用和 gameState.ts executeAIAction 相同的逻辑获取实际决定
+          const aiDecision = getAIDecision(
+            currentPlayer,
+            gameState.communityCards,
+            aiToCall,
+            minRaise,
+            maxRaise,
+            gameState.pot,
+            isPreFlop,
+            activeOpponents
+          );
+
+          let actionName: string;
+          if (aiDecision.action === 'fold') {
+            actionName = 'Fold';
+          } else if (aiDecision.action === 'check') {
+            actionName = 'Check';
+          } else if (aiDecision.action === 'call') {
+            actionName = `Call $${aiToCall}`;
+          } else if (aiDecision.action === 'raise') {
+            actionName = `Raise $${aiDecision.amount}`;
+          } else if (aiDecision.action === 'all-in') {
+            actionName = 'All-In';
+          } else {
+            actionName = 'Fold';
+          }
+
           showToast(currentPlayer.name, actionName);
         }
 
@@ -91,7 +107,7 @@ export function PokerTable() {
     } else {
       setThinkingPlayerIndex(null);
     }
-  }, [isPlayerTurn, phase, runAIAction, players, gameState.actionIndex, availableActions, betAmount, showToast]);
+  }, [isPlayerTurn, phase, runAIAction, players, gameState.actionIndex, gameState.currentBet, gameState.currentBet, gameState.pot, gameState.minRaise, availableActions, betAmount, showToast, phase]);
 
   // 游戏结束检测
   useEffect(() => {
