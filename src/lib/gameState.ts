@@ -445,10 +445,8 @@ function moveToNextPlayer(state: GameState): void {
   }
 
   state.actionIndex = nextIndex;
-  console.log('[moveToNextPlayer] SET actionIndex to', nextIndex, 'player:', state.players[nextIndex]?.name);
   const currentPlayer = state.players[nextIndex];
   state.isPlayerTurn = !currentPlayer.isAI;
-  console.log('[moveToNextPlayer] isPlayerTurn:', state.isPlayerTurn, '(isAI:', currentPlayer.isAI, ')');
 }
 
 // 进入下一阶段

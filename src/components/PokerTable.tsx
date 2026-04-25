@@ -35,7 +35,6 @@ export function PokerTable() {
       amount,
       isEvent: isEvent || false
     };
-    console.log(`[ACTION_LOG] R${bettingRoundRef.current} ${getPhaseLabel()} | ${playerName} -> ${action}${amount ? ' $' + amount : ''}${isEvent ? ' [EVENT]' : ''}`);
     setActionLog(prev => [newEntry, ...prev].slice(0, 100));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -120,7 +119,6 @@ export function PokerTable() {
       // 记录阶段变化事件
       if (phase === 'FLOP' || phase === 'TURN' || phase === 'RIVER' || phase === 'SHOWDOWN') {
         addLog('System', `${getPhaseLabel()}`, undefined, true);
-        console.log(`[COMMUNITY_CARDS] ${getPhaseLabel()}: ${JSON.stringify(gameState.communityCards)}`);
       }
 
       // 记录游戏结束
