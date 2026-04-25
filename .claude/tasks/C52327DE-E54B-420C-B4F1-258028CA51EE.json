@@ -1,0 +1,17 @@
+{
+  "testCase" : {
+    "type" : "GameFlow",
+    "name" : "Game Flow: Play Complete Hand",
+    "target" : "\/",
+    "iterations" : 1,
+    "expectedResult" : "Complete one full hand from Play Now to Hand Complete",
+    "id" : "1A4DA8B7-EECC-4E06-9DEA-4640FC943C3C",
+    "maxIterations" : 3
+  },
+  "error" : "TEST_FAILED: page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"**\/game\" until \"load\"\n  navigated to \"http:\/\/localhost:3000\/setup\"\n============================================================\nnode:internal\/process\/promises:394\n    triggerUncaughtException(err, true \/* fromPromise *\/);\n    ^\n\npage.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation to \"**\/game\" until \"load\"\n  navigated to \"http:\/\/localhost:3000\/setup\"\n============================================================\n    at \/private\/tmp\/test_1A4DA8B7-EECC-4E06-9DEA-4640FC943C3C.js:34:16 {\n  name: 'TimeoutError'\n}\n\nNode.js v23.11.0\n",
+  "createdAt" : 798556508.095928,
+  "iteration" : 1,
+  "projectPath" : "\/Volumes\/world\/program\/gamble\/high-stakes-digital",
+  "taskType" : "fix_bug",
+  "id" : "C52327DE-E54B-420C-B4F1-258028CA51EE"
+}

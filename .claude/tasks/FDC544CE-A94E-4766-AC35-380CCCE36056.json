@@ -1,0 +1,17 @@
+{
+  "createdAt" : 798477357.021581,
+  "error" : "TEST_FAILED: page.goto: Protocol error (Page.navigate): Cannot navigate to invalid URL\nCall log:\n\u001b[2m  - navigating to \"http:\/\/localhost:3000main, [role=main]\", waiting until \"networkidle\"\u001b[22m\n\n",
+  "taskType" : "fix_bug",
+  "id" : "FDC544CE-A94E-4766-AC35-380CCCE36056",
+  "projectPath" : "\/Volumes\/world\/program\/gamble\/high-stakes-digital",
+  "testCase" : {
+    "expectedResult" : "Main content area exists",
+    "iterations" : 1,
+    "type" : "UI",
+    "target" : "main, [role=main]",
+    "name" : "Main content visible",
+    "id" : "8EAE0F5C-9B5D-466D-9BAD-7545337CF3B1",
+    "maxIterations" : 3
+  },
+  "iteration" : 1
+}

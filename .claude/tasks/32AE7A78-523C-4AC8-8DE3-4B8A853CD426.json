@@ -1,0 +1,17 @@
+{
+  "iteration" : 1,
+  "projectPath" : "\/Volumes\/world\/program\/gamble\/high-stakes-digital",
+  "error" : "node:internal\/modules\/cjs\/loader:1408\n  throw err;\n  ^\n\nError: Cannot find module 'playwright'\nRequire stack:\n- \/private\/tmp\/test_A156D9BB-8A7F-4506-BE3E-F2C679A30FDE.js\n    at Function._resolveFilename (node:internal\/modules\/cjs\/loader:1405:15)\n    at defaultResolveImpl (node:internal\/modules\/cjs\/loader:1061:19)\n    at resolveForCJSWithHooks (node:internal\/modules\/cjs\/loader:1066:22)\n    at Function._load (node:internal\/modules\/cjs\/loader:1215:37)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal\/modules\/cjs\/loader:235:24)\n    at Module.require (node:internal\/modules\/cjs\/loader:1491:12)\n    at require (node:internal\/modules\/helpers:135:16)\n    at Object.<anonymous> (\/private\/tmp\/test_A156D9BB-8A7F-4506-BE3E-F2C679A30FDE.js:1:22)\n    at Module._compile (node:internal\/modules\/cjs\/loader:1734:14) {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [ '\/private\/tmp\/test_A156D9BB-8A7F-4506-BE3E-F2C679A30FDE.js' ]\n}\n\nNode.js v23.11.0\n",
+  "taskType" : "fix_bug",
+  "createdAt" : 798477130.17959,
+  "id" : "32AE7A78-523C-4AC8-8DE3-4B8A853CD426",
+  "testCase" : {
+    "iterations" : 1,
+    "maxIterations" : 3,
+    "type" : "UI",
+    "id" : "A156D9BB-8A7F-4506-BE3E-F2C679A30FDE",
+    "expectedResult" : "Main content area exists",
+    "name" : "Main content visible",
+    "target" : "main, [role=main]"
+  }
+}

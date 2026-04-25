@@ -1,0 +1,17 @@
+{
+  "taskType" : "fix_bug",
+  "testCase" : {
+    "target" : "\/",
+    "type" : "Functional",
+    "maxIterations" : 3,
+    "name" : "Route: \/",
+    "expectedResult" : "Page loads successfully",
+    "iterations" : 2,
+    "id" : "850596C9-A69E-4D54-B772-9680AD4C47D8"
+  },
+  "id" : "D3EA52C3-B314-44E7-ABD8-65C367ECC14C",
+  "iteration" : 2,
+  "error" : "TEST_FAILED: Console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error), Failed to load resource: net::ERR_CONNECTION_CLOSED\n",
+  "projectPath" : "\/Volumes\/world\/program\/gamble\/high-stakes-digital",
+  "createdAt" : 798556024.154219
+}

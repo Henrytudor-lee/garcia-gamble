@@ -1,0 +1,17 @@
+{
+  "id" : "52A833C6-641C-482A-BE31-4661F7B102CF",
+  "iteration" : 2,
+  "testCase" : {
+    "name" : "Footer visible",
+    "expectedResult" : "Footer element present",
+    "target" : "footer",
+    "maxIterations" : 3,
+    "type" : "UI",
+    "iterations" : 2,
+    "id" : "94B8DBFE-781E-4709-B78E-B1EF84CC1384"
+  },
+  "taskType" : "fix_bug",
+  "createdAt" : 798477558.923585,
+  "projectPath" : "\/Volumes\/world\/program\/gamble\/high-stakes-digital",
+  "error" : "TEST_FAILED: UI element not found: footer\n"
+}

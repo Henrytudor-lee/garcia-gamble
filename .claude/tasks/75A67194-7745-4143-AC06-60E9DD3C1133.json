@@ -1,0 +1,17 @@
+{
+  "error" : "TEST_FAILED: Console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error), Failed to load resource: the server responded with a status of 500 (Internal Server Error)\n",
+  "id" : "75A67194-7745-4143-AC06-60E9DD3C1133",
+  "projectPath" : "\/Volumes\/world\/program\/gamble\/high-stakes-digital",
+  "testCase" : {
+    "expectedResult" : "Page loads successfully",
+    "target" : "\/",
+    "type" : "Functional",
+    "iterations" : 1,
+    "name" : "Route: \/",
+    "id" : "C6CF34B0-8D5D-4B76-BF36-94CDB255AB0A",
+    "maxIterations" : 3
+  },
+  "createdAt" : 798477230.716965,
+  "iteration" : 1,
+  "taskType" : "fix_bug"
+}
