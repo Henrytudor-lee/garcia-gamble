@@ -81,33 +81,65 @@
   }
 }
 
-/* Thinking/Loading ring animation - rotating gradient border */
-@keyframes thinking-ring {
+/* Thinking/Loading ring animation - flowing gradient light along rounded-rect border edges */
+/* ================================================
+   THINKING RING ANIMATION — rotating glowing dot
+   ================================================ */
+.thinking-ring-svg {
+  position: absolute;
+  inset: -4px;
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.thinking-ring-path {
+  fill: none;
+  stroke: #ffd700;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 300 1000;
+  animation: thinking-flow 1.5s linear infinite;
+  filter: drop-shadow(0 0 6px #ffd700) drop-shadow(0 0 12px rgba(255, 215, 0, 0.5));
+}
+
+@keyframes thinking-flow {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -400; }
+}
+
+/* Rotating dot — clock-second-hand style */
+.thinking-ring-dot {
+  fill: #ffd700;
+  filter: drop-shadow(0 0 6px #ffd700) drop-shadow(0 0 14px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 22px rgba(255, 215, 0, 0.4));
+  transform-origin: 36px 36px;
+  animation: thinking-rotate 1.8s linear infinite;
+}
+
+@keyframes thinking-rotate {
+  from { transform: rotate(0deg) translateX(34px); }
+  to   { transform: rotate(360deg) translateX(34px); }
+}
+
+/* Community card deal animation - fade in from distant position */
+@keyframes card-deal {
   0% {
-    transform: rotate(0deg);
-    border-color: #e9c349 transparent transparent transparent;
+    opacity: 0;
+    transform: scale(0.6) translateY(-24px);
   }
-  25% {
-    border-color: #e9c349 #a5d0b9 transparent transparent;
-  }
-  50% {
-    border-color: #e9c349 #a5d0b9 #c6c6c6 transparent;
-  }
-  75% {
-    border-color: #e9c349 #a5d0b9 #c6c6c6 #ffb4ab;
+  60% {
+    opacity: 1;
+    transform: scale(1.05) translateY(2px);
   }
   100% {
-    transform: rotate(360deg);
-    border-color: #e9c349 transparent transparent transparent;
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 
-.thinking-ring {
-  position: absolute;
-  inset: -4px;
-  border-radius: 100%;
-  border: 4px solid transparent;
-  animation: thinking-ring 1.5s linear infinite;
+.card-deal-anim {
+  animation: card-deal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 @layer components {

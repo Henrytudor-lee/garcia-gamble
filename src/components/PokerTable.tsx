@@ -20,6 +20,8 @@ export function PokerTable() {
   const prevPhaseRef = useRef<string>('SETUP');
   const bettingRoundRef = useRef(0);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const prevCommunityCountRef = useRef(0);
+  const [newCommunityCardIndex, setNewCommunityCardIndex] = useState(-1);
 
   const { players, communityCards, pot, phase, isPlayerTurn, isGameOver, isVictory, handCount, lastPotWon, showdownHands } = gameState;
   const player = players[0];
@@ -189,6 +191,15 @@ export function PokerTable() {
           addLog('System', winner.isAI ? `AI Wins $${lastPotWon}` : `You Win $${lastPotWon}`, undefined, true);
         }
       }
+
+      // 检测新公共牌并触发淡入动画
+      if (communityCards.length > prevCommunityCountRef.current) {
+        const newCardIndex = communityCards.length - 1; // 动画最新那张
+        setNewCommunityCardIndex(newCardIndex);
+        // 动画结束后清除（500ms = 动画时长）
+        setTimeout(() => setNewCommunityCardIndex(-1), 600);
+      }
+      prevCommunityCountRef.current = communityCards.length;
     }
 
     // 记录盲注（每次进入 PRE_FLOP 时）
@@ -202,7 +213,7 @@ export function PokerTable() {
     }
 
     prevPhaseRef.current = phase;
-  }, [phase, addLog, gameState, showdownHands, lastPotWon]);
+  }, [phase, addLog, gameState, showdownHands, lastPotWon, communityCards.length]);
 
   const handleFold = useCallback(() => {
     showToast('You', 'Fold');
@@ -268,7 +279,7 @@ export function PokerTable() {
 
             {/* Community Cards - Center of table */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <CommunityCards cards={communityCards} size="md" />
+              <CommunityCards cards={communityCards} size="md" newCardIndex={newCommunityCardIndex} />
             </div>
 
             {/* Phase Indicator */}
@@ -308,7 +319,7 @@ export function PokerTable() {
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full pb-4 flex flex-col items-center z-20">
             <div className="relative">
               <div className={`absolute inset-0 rounded-full ${isPlayerTurn ? 'bg-primary/20' : 'bg-secondary/20'} blur-xl`}></div>
-              <div className={`w-14 h-14 rounded-full border-4 ${isPlayerTurn ? 'border-primary' : 'border-secondary'} relative z-10 shadow-[0_0_20px_rgba(233,195,73,0.3)] flex items-center justify-center bg-surface-container-highest`}>
+              <div className={`w-14 h-14 rounded-2xl border-4 ${isPlayerTurn ? 'border-primary' : 'border-secondary'} relative z-10 shadow-[0_0_20px_rgba(233,195,73,0.3)] flex items-center justify-center bg-surface-container-highest`}>
                 <span className="material-symbols-outlined text-primary text-xl">person</span>
               </div>
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-20 glass-panel px-3 py-0.5 rounded-full border border-primary/30 shadow-lg">
@@ -341,7 +352,7 @@ export function PokerTable() {
               <p className="text-primary font-headline font-bold text-xs mt-0.5">${opponentInfo[0]?.chips.toLocaleString()}</p>
             </div>
             <div className="relative group">
-              <div className={`w-16 h-16 rounded-full border-4 ${opponentInfo[0]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
+              <div className={`w-16 h-16 rounded-2xl border-4 ${opponentInfo[0]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
                 {opponentInfo[0]?.isFolded ? (
                   <span className="material-symbols-outlined text-on-surface-variant/50">close</span>
                 ) : (
@@ -350,7 +361,10 @@ export function PokerTable() {
               </div>
               {/* Thinking animation */}
               {thinkingPlayerIndex === 1 && !opponentInfo[0]?.isFolded && (
-                <div className="thinking-ring"></div>
+                <svg className="thinking-ring-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="36" cy="2" r="3.5" className="thinking-ring-dot" style={{ animationDelay: '0s' }} />
+                <circle cx="36" cy="2" r="2.5" className="thinking-ring-dot" style={{ animationDelay: '-0.6s', opacity: 0.7 }} />
+              </svg>
               )}
               {opponentInfo[0]?.isAllIn && (
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
@@ -377,7 +391,7 @@ export function PokerTable() {
               <p className="text-primary font-headline font-bold text-xs mt-0.5">${opponentInfo[1]?.chips.toLocaleString()}</p>
             </div>
             <div className="relative group">
-              <div className={`w-16 h-16 rounded-full border-4 ${opponentInfo[1]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
+              <div className={`w-16 h-16 rounded-2xl border-4 ${opponentInfo[1]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
                 {opponentInfo[1]?.isFolded ? (
                   <span className="material-symbols-outlined text-on-surface-variant/50">close</span>
                 ) : (
@@ -386,7 +400,10 @@ export function PokerTable() {
               </div>
               {/* Thinking animation */}
               {thinkingPlayerIndex === 2 && !opponentInfo[1]?.isFolded && (
-                <div className="thinking-ring"></div>
+                <svg className="thinking-ring-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="36" cy="2" r="3.5" className="thinking-ring-dot" style={{ animationDelay: '0s' }} />
+                <circle cx="36" cy="2" r="2.5" className="thinking-ring-dot" style={{ animationDelay: '-0.6s', opacity: 0.7 }} />
+              </svg>
               )}
               {opponentInfo[1]?.isAllIn && (
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
@@ -413,7 +430,7 @@ export function PokerTable() {
               <p className="text-primary font-headline font-bold text-xs mt-0.5">${opponentInfo[2]?.chips.toLocaleString()}</p>
             </div>
             <div className="relative group">
-              <div className={`w-16 h-16 rounded-full border-4 ${opponentInfo[2]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
+              <div className={`w-16 h-16 rounded-2xl border-4 ${opponentInfo[2]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
                 {opponentInfo[2]?.isFolded ? (
                   <span className="material-symbols-outlined text-on-surface-variant/50">close</span>
                 ) : (
@@ -422,7 +439,10 @@ export function PokerTable() {
               </div>
               {/* Thinking animation */}
               {thinkingPlayerIndex === 3 && !opponentInfo[2]?.isFolded && (
-                <div className="thinking-ring"></div>
+                <svg className="thinking-ring-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="36" cy="2" r="3.5" className="thinking-ring-dot" style={{ animationDelay: '0s' }} />
+                <circle cx="36" cy="2" r="2.5" className="thinking-ring-dot" style={{ animationDelay: '-0.6s', opacity: 0.7 }} />
+              </svg>
               )}
               {opponentInfo[2]?.isAllIn && (
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
@@ -440,7 +460,7 @@ export function PokerTable() {
           {/* Opponent 4 (index 3) - Left Side */}
           <div className="absolute top-1/2 left-0 -translate-x-full -ml-4 flex flex-col items-center z-20">
             <div className="relative group">
-              <div className={`w-14 h-14 rounded-full border-4 ${opponentInfo[3]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
+              <div className={`w-14 h-14 rounded-2xl border-4 ${opponentInfo[3]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
                 {opponentInfo[3]?.isFolded ? (
                   <span className="material-symbols-outlined text-on-surface-variant/50">close</span>
                 ) : (
@@ -449,7 +469,10 @@ export function PokerTable() {
               </div>
               {/* Thinking animation */}
               {thinkingPlayerIndex === 4 && !opponentInfo[3]?.isFolded && (
-                <div className="thinking-ring"></div>
+                <svg className="thinking-ring-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="36" cy="2" r="3.5" className="thinking-ring-dot" style={{ animationDelay: '0s' }} />
+                <circle cx="36" cy="2" r="2.5" className="thinking-ring-dot" style={{ animationDelay: '-0.6s', opacity: 0.7 }} />
+              </svg>
               )}
               {opponentInfo[3]?.isAllIn && (
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
@@ -471,7 +494,7 @@ export function PokerTable() {
           {/* Opponent 5 (index 4) - Right Side */}
           <div className="absolute top-1/2 right-0 translate-x-full mr-4 flex flex-col items-center z-20">
             <div className="relative group">
-              <div className={`w-14 h-14 rounded-full border-4 ${opponentInfo[4]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
+              <div className={`w-14 h-14 rounded-2xl border-4 ${opponentInfo[4]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
                 {opponentInfo[4]?.isFolded ? (
                   <span className="material-symbols-outlined text-on-surface-variant/50">close</span>
                 ) : (
@@ -480,7 +503,10 @@ export function PokerTable() {
               </div>
               {/* Thinking animation */}
               {thinkingPlayerIndex === 5 && !opponentInfo[4]?.isFolded && (
-                <div className="thinking-ring"></div>
+                <svg className="thinking-ring-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="36" cy="2" r="3.5" className="thinking-ring-dot" style={{ animationDelay: '0s' }} />
+                <circle cx="36" cy="2" r="2.5" className="thinking-ring-dot" style={{ animationDelay: '-0.6s', opacity: 0.7 }} />
+              </svg>
               )}
               {opponentInfo[4]?.isAllIn && (
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
@@ -499,37 +525,66 @@ export function PokerTable() {
             </div>
           </div>
 
-          {/* Showdown Results - 显示所有玩家手牌 */}
-          {(phase === 'SHOWDOWN' || phase === 'END') && showdownHands.length > 0 && (
-            <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
-              <div className="glass-panel rounded-2xl border border-white/10 p-6 max-w-md pointer-events-auto">
-                <h4 className="text-sm font-bold text-primary uppercase tracking-widest mb-4 text-center">Showdown</h4>
-                <div className="space-y-4">
-                  {showdownHands.map((sh, i) => (
-                    <div key={sh.player.id} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-primary/20 border border-primary/30' : ''}`}>
-                      {/* 显示手牌 */}
-                      <div className="flex gap-1">
-                        <Card card={sh.holeCards[0]} size="sm" hidden={false} />
-                        <Card card={sh.holeCards[1]} size="sm" hidden={false} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm font-bold ${i === 0 ? 'text-primary' : 'text-on-surface'}`}>
-                            {sh.player.name}
-                          </span>
-                          {i === 0 && <span className="text-xs bg-primary text-white px-2 py-0.5 rounded font-bold">WINNER</span>}
+          {/* Unified Showdown + Result Overlay */}
+          {(phase === 'SHOWDOWN' || (phase === 'END' && showdownHands.length > 0)) && showdownHands.length > 0 && (
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40">
+              <div className="glass-panel rounded-2xl border border-white/10 p-8 max-w-md text-center space-y-6">
+                {/* Result Header - only show after END; during SHOWDOWN show who's winning */}
+                {phase === 'END' ? (
+                  <div className="space-y-1">
+                    <h2 className="text-4xl font-black font-headline text-primary">
+                      {isVictory ? 'VICTORY!' : 'GAME OVER'}
+                    </h2>
+                    <p className="text-on-surface-variant text-sm">
+                      {isVictory ? `You won $${lastPotWon.toLocaleString()}!` : 'Your chips have run out.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-black font-headline text-primary">Showdown</h2>
+                    <p className="text-on-surface-variant text-xs">
+                      {showdownHands[0]?.player.name} is winning
+                    </p>
+                  </div>
+                )}
+
+                {/* Divider */}
+                <div className="border-t border-white/10" />
+
+                {/* Showdown Section */}
+                <div className="space-y-3">
+                  <div className="space-y-3">
+                    {showdownHands.map((sh, i) => (
+                      <div key={sh.player.id} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-primary/20 border border-primary/30' : ''}`}>
+                        {/* 显示手牌 */}
+                        <div className="flex gap-1">
+                          <Card card={sh.holeCards[0]} size="sm" hidden={false} />
+                          <Card card={sh.holeCards[1]} size="sm" hidden={false} />
                         </div>
-                        <div className="text-xs text-on-surface-variant">{getHandDescription(sh.hand)}</div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-bold ${i === 0 ? 'text-primary' : 'text-on-surface'}`}>
+                              {sh.player.name}
+                            </span>
+                            {i === 0 && <span className="text-xs bg-primary text-white px-2 py-0.5 rounded font-bold">WINNER</span>}
+                          </div>
+                          <div className="text-xs text-on-surface-variant">{getHandDescription(sh.hand)}</div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
+
+                {/* Redirect hint */}
+                {phase === 'END' && isGameOver && (
+                  <p className="text-on-surface-variant text-xs">Redirecting...</p>
+                )}
               </div>
             </div>
           )}
 
-          {/* Game Over Overlay - only show when player is actually bankrupt */}
-          {phase === 'END' && isGameOver && (
+          {/* Legacy Game Over Overlay - only for END without showdown (shouldn't happen) */}
+          {phase === 'END' && isGameOver && showdownHands.length === 0 && (
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
               <div className="text-center space-y-4">
                 <h2 className="text-4xl font-black font-headline text-primary">

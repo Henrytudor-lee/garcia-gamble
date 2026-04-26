@@ -22,9 +22,9 @@ const rankSizes = {
 };
 
 const suitSizes = {
-  sm: 'text-sm',
-  md: 'text-2xl',
-  lg: 'text-4xl'
+  sm: 'text-2xl',
+  md: 'text-5xl',
+  lg: 'text-7xl'
 };
 
 const cornerSuitSizes = {
@@ -136,9 +136,10 @@ interface CommunityCardsProps {
   cards: CardType[];
   size?: 'md' | 'lg';
   className?: string;
+  newCardIndex?: number; // index of the card that just appeared (for animation)
 }
 
-export function CommunityCards({ cards, size = 'md', className = '' }: CommunityCardsProps) {
+export function CommunityCards({ cards, size = 'md', className = '', newCardIndex = -1 }: CommunityCardsProps) {
   const allCards: (CardType | null)[] = [...cards];
   while (allCards.length < 5) {
     allCards.push(null);
@@ -152,6 +153,7 @@ export function CommunityCards({ cards, size = 'md', className = '' }: Community
           card={card}
           size={size}
           hidden={false}
+          className={index === newCardIndex ? 'card-deal-anim' : ''}
         />
       ))}
     </div>
