@@ -122,6 +122,53 @@
   to   { transform: rotate(360deg) translateX(34px); }
 }
 
+/* ================================================
+   FLOWING GRADIENT BORDER — counter-clockwise
+   Avatar waiting/loading animation
+   ================================================ */
+
+/*
+ * Counter-clockwise flowing gradient segment
+ * 
+ * stroke-dasharray: [segment_length] [path_length]
+ * - segment_length: visible gradient segment (~48px)
+ * - path_length: total border path length (~208px for 64x64 rounded rect)
+ * 
+ * stroke-dashoffset: starts at 0, animates to -PATH_LENGTH
+ * - This moves the dash pattern backward along the path = counter-clockwise
+ * 
+ * The gradient itself has transparent ends for elegant fade-in/out of segment
+ */
+@keyframes flowing-border-counter-clockwise {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -208; /* Negative = counter-clockwise movement */
+  }
+}
+
+/* Reduced motion variant */
+@media (prefers-reduced-motion: reduce) {
+  .flowing-border-segment {
+    animation: none !important;
+  }
+  
+  /* Fallback: simple pulsing border for reduced motion */
+  .flowing-border-reduced {
+    animation: pulse-border 1.5s ease-in-out infinite !important;
+  }
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* Community card deal animation - fade in from distant position */
 @keyframes card-deal {
   0% {

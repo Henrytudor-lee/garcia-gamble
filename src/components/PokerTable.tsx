@@ -7,6 +7,7 @@ import { Navigation } from './Navigation';
 import { Card, CardHand, CommunityCards } from './Card';
 import { getHandDescription } from '@/lib/poker';
 import { getPersonalityDescription, getAIDecision } from '@/lib/ai';
+import { PlayerAvatar } from './PlayerAvatar';
 
 export function PokerTable() {
   const router = useRouter();
@@ -317,15 +318,15 @@ export function PokerTable() {
           {/* Player 0 (You) - Bottom Center */}
           {/* 玩家头像和信息在牌桌外侧下方 */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full pb-4 flex flex-col items-center z-20">
-            <div className="relative">
-              <div className={`absolute inset-0 rounded-full ${isPlayerTurn ? 'bg-primary/20' : 'bg-secondary/20'} blur-xl`}></div>
-              <div className={`w-14 h-14 rounded-2xl border-4 ${isPlayerTurn ? 'border-primary' : 'border-secondary'} relative z-10 shadow-[0_0_20px_rgba(233,195,73,0.3)] flex items-center justify-center bg-surface-container-highest`}>
-                <span className="material-symbols-outlined text-primary text-xl">person</span>
-              </div>
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-20 glass-panel px-3 py-0.5 rounded-full border border-primary/30 shadow-lg">
-                <span className="text-[10px] font-headline font-black text-primary tracking-wider uppercase">You</span>
-              </div>
-            </div>
+            <PlayerAvatar
+              name="You"
+              isAI={false}
+              isFolded={player.isFolded}
+              isAllIn={player.isAllIn}
+              isWaiting={isPlayerTurn}
+              chips={player.chips}
+              size="sm"
+            />
             <div className="mt-2 glass-panel px-3 py-1 rounded-lg border border-white/5">
               <p className="text-primary font-headline font-bold text-sm">${player.chips.toLocaleString()}</p>
             </div>
@@ -352,23 +353,16 @@ export function PokerTable() {
               <p className="text-primary font-headline font-bold text-xs mt-0.5">${opponentInfo[0]?.chips.toLocaleString()}</p>
             </div>
             <div className="relative group">
-              <div className={`w-16 h-16 rounded-2xl border-4 ${opponentInfo[0]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
-                {opponentInfo[0]?.isFolded ? (
-                  <span className="material-symbols-outlined text-on-surface-variant/50">close</span>
-                ) : (
-                  <span className="material-symbols-outlined text-primary">smart_toy</span>
-                )}
-              </div>
-              {/* Thinking animation */}
-              {thinkingPlayerIndex === 1 && !opponentInfo[0]?.isFolded && (
-                <svg className="thinking-ring-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="36" cy="2" r="3.5" className="thinking-ring-dot" style={{ animationDelay: '0s' }} />
-                <circle cx="36" cy="2" r="2.5" className="thinking-ring-dot" style={{ animationDelay: '-0.6s', opacity: 0.7 }} />
-              </svg>
-              )}
-              {opponentInfo[0]?.isAllIn && (
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
-              )}
+              <PlayerAvatar
+                name={opponentInfo[0]?.name || 'Opponent'}
+                isAI={true}
+                isFolded={opponentInfo[0]?.isFolded}
+                isAllIn={opponentInfo[0]?.isAllIn}
+                isWaiting={thinkingPlayerIndex === 1}
+                chips={opponentInfo[0]?.chips || 0}
+                size="md"
+                showBadge={false}
+              />
               {/* SHOWDOWN: 显示 AI 底牌 */}
               {phase === 'SHOWDOWN' && !opponentInfo[0]?.isFolded && opponentInfo[0]?.holeCards?.length === 2 && (
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-0.5">
@@ -391,23 +385,16 @@ export function PokerTable() {
               <p className="text-primary font-headline font-bold text-xs mt-0.5">${opponentInfo[1]?.chips.toLocaleString()}</p>
             </div>
             <div className="relative group">
-              <div className={`w-16 h-16 rounded-2xl border-4 ${opponentInfo[1]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
-                {opponentInfo[1]?.isFolded ? (
-                  <span className="material-symbols-outlined text-on-surface-variant/50">close</span>
-                ) : (
-                  <span className="material-symbols-outlined text-primary">smart_toy</span>
-                )}
-              </div>
-              {/* Thinking animation */}
-              {thinkingPlayerIndex === 2 && !opponentInfo[1]?.isFolded && (
-                <svg className="thinking-ring-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="36" cy="2" r="3.5" className="thinking-ring-dot" style={{ animationDelay: '0s' }} />
-                <circle cx="36" cy="2" r="2.5" className="thinking-ring-dot" style={{ animationDelay: '-0.6s', opacity: 0.7 }} />
-              </svg>
-              )}
-              {opponentInfo[1]?.isAllIn && (
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
-              )}
+              <PlayerAvatar
+                name={opponentInfo[1]?.name || 'Opponent'}
+                isAI={true}
+                isFolded={opponentInfo[1]?.isFolded}
+                isAllIn={opponentInfo[1]?.isAllIn}
+                isWaiting={thinkingPlayerIndex === 2}
+                chips={opponentInfo[1]?.chips || 0}
+                size="md"
+                showBadge={false}
+              />
               {/* SHOWDOWN: 显示 AI 底牌 */}
               {phase === 'SHOWDOWN' && !opponentInfo[1]?.isFolded && opponentInfo[1]?.holeCards?.length === 2 && (
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-0.5">
@@ -430,23 +417,16 @@ export function PokerTable() {
               <p className="text-primary font-headline font-bold text-xs mt-0.5">${opponentInfo[2]?.chips.toLocaleString()}</p>
             </div>
             <div className="relative group">
-              <div className={`w-16 h-16 rounded-2xl border-4 ${opponentInfo[2]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
-                {opponentInfo[2]?.isFolded ? (
-                  <span className="material-symbols-outlined text-on-surface-variant/50">close</span>
-                ) : (
-                  <span className="material-symbols-outlined text-primary">smart_toy</span>
-                )}
-              </div>
-              {/* Thinking animation */}
-              {thinkingPlayerIndex === 3 && !opponentInfo[2]?.isFolded && (
-                <svg className="thinking-ring-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="36" cy="2" r="3.5" className="thinking-ring-dot" style={{ animationDelay: '0s' }} />
-                <circle cx="36" cy="2" r="2.5" className="thinking-ring-dot" style={{ animationDelay: '-0.6s', opacity: 0.7 }} />
-              </svg>
-              )}
-              {opponentInfo[2]?.isAllIn && (
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
-              )}
+              <PlayerAvatar
+                name={opponentInfo[2]?.name || 'Opponent'}
+                isAI={true}
+                isFolded={opponentInfo[2]?.isFolded}
+                isAllIn={opponentInfo[2]?.isAllIn}
+                isWaiting={thinkingPlayerIndex === 3}
+                chips={opponentInfo[2]?.chips || 0}
+                size="md"
+                showBadge={false}
+              />
               {/* SHOWDOWN: 显示 AI 底牌 */}
               {phase === 'SHOWDOWN' && !opponentInfo[2]?.isFolded && opponentInfo[2]?.holeCards?.length === 2 && (
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-0.5">
@@ -460,23 +440,16 @@ export function PokerTable() {
           {/* Opponent 4 (index 3) - Left Side */}
           <div className="absolute top-1/2 left-0 -translate-x-full -ml-4 flex flex-col items-center z-20">
             <div className="relative group">
-              <div className={`w-14 h-14 rounded-2xl border-4 ${opponentInfo[3]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
-                {opponentInfo[3]?.isFolded ? (
-                  <span className="material-symbols-outlined text-on-surface-variant/50">close</span>
-                ) : (
-                  <span className="material-symbols-outlined text-primary">smart_toy</span>
-                )}
-              </div>
-              {/* Thinking animation */}
-              {thinkingPlayerIndex === 4 && !opponentInfo[3]?.isFolded && (
-                <svg className="thinking-ring-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="36" cy="2" r="3.5" className="thinking-ring-dot" style={{ animationDelay: '0s' }} />
-                <circle cx="36" cy="2" r="2.5" className="thinking-ring-dot" style={{ animationDelay: '-0.6s', opacity: 0.7 }} />
-              </svg>
-              )}
-              {opponentInfo[3]?.isAllIn && (
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
-              )}
+              <PlayerAvatar
+                name={opponentInfo[3]?.name || 'Opponent'}
+                isAI={true}
+                isFolded={opponentInfo[3]?.isFolded}
+                isAllIn={opponentInfo[3]?.isAllIn}
+                isWaiting={thinkingPlayerIndex === 4}
+                chips={opponentInfo[3]?.chips || 0}
+                size="sm"
+                showBadge={false}
+              />
               {/* SHOWDOWN: 显示 AI 底牌 */}
               {phase === 'SHOWDOWN' && !opponentInfo[3]?.isFolded && opponentInfo[3]?.holeCards?.length === 2 && (
                 <div className="absolute -left-8 top-1/2 -translate-y-1/2 flex gap-0.5">
@@ -494,23 +467,16 @@ export function PokerTable() {
           {/* Opponent 5 (index 4) - Right Side */}
           <div className="absolute top-1/2 right-0 translate-x-full mr-4 flex flex-col items-center z-20">
             <div className="relative group">
-              <div className={`w-14 h-14 rounded-2xl border-4 ${opponentInfo[4]?.isFolded ? 'border-surface-container-high opacity-50' : 'border-surface-container-high'} bg-surface-container shadow-xl flex items-center justify-center`}>
-                {opponentInfo[4]?.isFolded ? (
-                  <span className="material-symbols-outlined text-on-surface-variant/50">close</span>
-                ) : (
-                  <span className="material-symbols-outlined text-primary">smart_toy</span>
-                )}
-              </div>
-              {/* Thinking animation */}
-              {thinkingPlayerIndex === 5 && !opponentInfo[4]?.isFolded && (
-                <svg className="thinking-ring-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="36" cy="2" r="3.5" className="thinking-ring-dot" style={{ animationDelay: '0s' }} />
-                <circle cx="36" cy="2" r="2.5" className="thinking-ring-dot" style={{ animationDelay: '-0.6s', opacity: 0.7 }} />
-              </svg>
-              )}
-              {opponentInfo[4]?.isAllIn && (
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-error text-white text-[8px] px-2 py-0.5 rounded font-black">ALL-IN</div>
-              )}
+              <PlayerAvatar
+                name={opponentInfo[4]?.name || 'Opponent'}
+                isAI={true}
+                isFolded={opponentInfo[4]?.isFolded}
+                isAllIn={opponentInfo[4]?.isAllIn}
+                isWaiting={thinkingPlayerIndex === 5}
+                chips={opponentInfo[4]?.chips || 0}
+                size="sm"
+                showBadge={false}
+              />
               {/* SHOWDOWN: 显示 AI 底牌 */}
               {phase === 'SHOWDOWN' && !opponentInfo[4]?.isFolded && opponentInfo[4]?.holeCards?.length === 2 && (
                 <div className="absolute -right-8 top-1/2 -translate-y-1/2 flex gap-0.5">

@@ -226,12 +226,14 @@ function getNextActivePlayerIndex(state: GameState, fromIndex: number): number {
   for (let i = 1; i <= n; i++) {
     const nextIndex = (fromIndex + i) % n;
     const player = state.players[nextIndex];
-    if (!player.isFolded && player.chips > 0) {
+    // 注意：全下玩家 chips=0，但不应该被跳过（他们仍然参与游戏）
+    // 只有弃牌玩家才被跳过
+    if (!player.isFolded) {
       return nextIndex;
     }
   }
 
-  return -1; // 没有活跃玩家
+  return -1; // 没有活跃玩家（全部弃牌）
 }
 
 // 获取第一个行动玩家（庄家左手边未弃牌玩家）
