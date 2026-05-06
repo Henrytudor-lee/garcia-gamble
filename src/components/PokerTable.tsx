@@ -520,6 +520,18 @@ export function PokerTable() {
                   </div>
                 )}
 
+                {/* Community Cards */}
+                {communityCards.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Community Cards</div>
+                    <div className="flex gap-1 justify-center">
+                      {communityCards.map((card, i) => (
+                        <Card key={i} card={card} size="sm" hidden={false} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Divider */}
                 <div className="border-t border-white/10" />
 
