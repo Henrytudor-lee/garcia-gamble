@@ -16,8 +16,9 @@ export interface Player {
   level?: AILevel;
   isFolded: boolean;
   isAllIn: boolean;
-  currentBet: number;     // 本轮已投入筹码
+  currentBet: number;      // 本轮已投入筹码（每轮重置）
   hasActed: boolean;       // 本轮是否已行动
+  totalBetInHand: number;  // 本手牌总投入（跨轮次累计，用于边池计算）
 }
 
 export interface AIAction {

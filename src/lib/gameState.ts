@@ -33,6 +33,8 @@ export interface GameState {
 
   currentBet: number;         // 当前轮最高下注
   minRaise: number;            // 最小加注额
+  lastBetWasRaise: boolean;    // 本轮是否发生过有效加注（用于判断下注轮是否真正结束）
+  justResetRound?: boolean;    // 刚重置过本轮下注，防止 advancePhase 后递归触发 isBettingRoundComplete
 
   phase: GamePhase;
   actionIndex: number;         // 当前行动玩家 seatIndex
@@ -44,12 +46,19 @@ export interface GameState {
   handCount: number;
   totalProfit: number;
   lastPotWon: number;
+  lastAIPotWon: number;
   showdownHands: { player: Player; hand: ReturnType<typeof evaluateHand>; holeCards: Card[] }[];
 }
 
 export interface GameAction {
   type: 'fold' | 'check' | 'call' | 'raise' | 'all-in';
   amount?: number;
+}
+
+// 边池分配结果
+interface PotDistribution {
+  player: Player;
+  amount: number;
 }
 
 // 初始配置
@@ -60,8 +69,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   bettingType: 'no-limit',
   smallBlind: 50,
   bigBlind: 100,
-  aiPersonalities: ['conservative', 'aggressive', 'opportunistic', 'conservative', 'aggressive', 'opportunistic', 'conservative', 'aggressive'],
-  aiLevels: [2, 2, 2, 1, 3, 1, 2, 3]
+  aiPersonalities: ['conservative', 'aggressive', 'opportunistic', 'conservative', 'aggressive'],
+  aiLevels: [2, 2, 2, 1, 3]
 };
 
 // 创建玩家
@@ -79,7 +88,8 @@ function createPlayers(config: GameConfig): Player[] {
     isFolded: false,
     isAllIn: false,
     currentBet: 0,
-    hasActed: false
+    hasActed: false,
+    totalBetInHand: 0
   });
 
   // AI玩家
@@ -96,7 +106,8 @@ function createPlayers(config: GameConfig): Player[] {
       isFolded: false,
       isAllIn: false,
       currentBet: 0,
-      hasActed: false
+      hasActed: false,
+      totalBetInHand: 0
     });
   }
 
@@ -127,7 +138,9 @@ export function initGame(config: GameConfig = DEFAULT_CONFIG): GameState {
     handCount: 0,
     totalProfit: 0,
     lastPotWon: 0,
-    showdownHands: []
+    lastAIPotWon: 0,
+    showdownHands: [],
+    lastBetWasRaise: false
   };
 }
 
@@ -151,20 +164,20 @@ function postBlinds(state: GameState): void {
   const sb = state.config.smallBlind;
   const bb = state.config.bigBlind;
 
+  // 大盲（按德扑规则，大盲下注在前）
+  const bbPlayer = state.players[state.bigBlindIndex];
+  const bbAmount = Math.min(bb, bbPlayer.chips);
+  bbPlayer.chips -= bbAmount;
+  bbPlayer.currentBet = bbAmount;
+  state.pot += bbAmount;
+  state.currentBet = bbAmount;
+
   // 小盲
   const sbPlayer = state.players[state.smallBlindIndex];
   const sbAmount = Math.min(sb, sbPlayer.chips);
   sbPlayer.chips -= sbAmount;
   sbPlayer.currentBet = sbAmount;
-
-  // 大盲
-  const bbPlayer = state.players[state.bigBlindIndex];
-  const bbAmount = Math.min(bb, bbPlayer.chips);
-  bbPlayer.chips -= bbAmount;
-  bbPlayer.currentBet = bbAmount;
-
-  state.pot += sbAmount + bbAmount;
-  state.currentBet = bbAmount; // 大盲下注为当前最高
+  state.pot += sbAmount;
 }
 
 // 获取需要跟注的金额
@@ -199,24 +212,29 @@ function isBettingRoundComplete(state: GameState): boolean {
 
   // 获取还能继续下注的玩家（未弃牌且未全下）
   const canStillBetPlayers = state.players.filter(p => !p.isFolded && !p.isAllIn);
-  // 获取所有活跃玩家（包括全下的）- 用于检测是否还有人需要下注
-  const allActivePlayers = state.players.filter(p => !p.isFolded);
 
-  // 所有还能下注的玩家的 currentBet 都相等
-  // 注意：all-in 玩家的 bet 不会重置（resetBettingRound 时不重置他们的 bet），
-  // 所以不能把他们算进 allHaveEqualBet 检查
-  const allHaveEqualBet = canStillBetPlayers.length === 0 ||
-    canStillBetPlayers.every(p => p.currentBet === state.currentBet);
+  // 所有人都已全下 -> 直接结束
+  if (canStillBetPlayers.length === 0) {
+    return true;
+  }
+
+  // 刚从 advancePhase 重置过 -> 跳过此次检查，防止在 advancePhase 内部递归触发 isBettingRoundComplete
+  // 重置后默认所有人尚未行动，必须先让玩家表态，不能提前结束
+  if (state.justResetRound) {
+    return false;
+  }
+
+  // 所有还能下注的玩家的 currentBet 都相等，且所有人都已行动
+  // 注意：all-in 玩家的 bet 不会重置，所以不能把他们算进 bet 相等检查
+  const allHaveEqualBet = canStillBetPlayers.every(p => p.currentBet === state.currentBet);
 
   // 所有还能下注的玩家都已行动（已行动或已全下）
-  const allCanBetPlayersActed = canStillBetPlayers.length === 0 ||
-    canStillBetPlayers.every(p => p.hasActed || p.isAllIn);
+  const allCanBetPlayersActed = canStillBetPlayers.every(p => p.hasActed || p.isAllIn);
 
-  // 全下玩家也算已行动
-  const allActivePlayersActed = allActivePlayers.length <= 1 ||
-    allActivePlayers.every(p => p.hasActed || p.isAllIn);
-
-  return allHaveEqualBet && (allCanBetPlayersActed || allActivePlayersActed);
+  // 结束条件：所有还能下注的玩家下注相等 且 所有人都已行动（或全下）
+  // 注意：不需要额外检查 lastBetWasRaise，因为 allCanBetPlayersActed 已经包含了
+  // "所有人都行动了"这个约束——只要没人行动完，即使下注相等也不能结束轮次
+  return allHaveEqualBet && allCanBetPlayersActed;
 }
 
 // 获取下一个未弃牌且有筹码的玩家索引
@@ -241,6 +259,36 @@ function getFirstActorIndex(state: GameState): number {
   return getNextActivePlayerIndex(state, state.dealerIndex);
 }
 
+// 计算边池（用于多人全下金额不同的情况）
+// 返回 { mainPot, sidePots }，边池按从大到小排序
+export function calculateSidePots(state: GameState): { mainPot: number; sidePots: number[] } {
+  const activePlayers = state.players.filter(p => !p.isFolded);
+
+  if (activePlayers.length <= 1) {
+    return { mainPot: state.pot, sidePots: [] };
+  }
+
+  // 按本手牌总投入升序排列
+  const sorted = [...activePlayers].sort((a, b) => a.totalBetInHand - b.totalBetInHand);
+
+  // 最低投入者形成主池，所有人等额部分归主池
+  const mainPot = sorted[0].totalBetInHand * sorted.length;
+
+  // 计算每个玩家超出主池的部分，这些金额形成边池
+  const sidePotContributions: number[] = [];
+  for (let i = 1; i < sorted.length; i++) {
+    // 当前玩家超出最低投入的金额 × 有资格竞争这部分的人数
+    const excessPerPlayer = sorted[i].totalBetInHand - sorted[0].totalBetInHand;
+    const eligiblePlayers = sorted.length - i; // 只有投入 >= 当前档位的玩家才能竞争
+    sidePotContributions.push(excessPerPlayer * eligiblePlayers);
+  }
+
+  // 过滤掉 0 值的边池，并按从大到小排序
+  const sidePots = sidePotContributions.filter(v => v > 0).sort((a, b) => b - a);
+
+  return { mainPot, sidePots };
+}
+
 // 重置本轮下注状态
 function resetBettingRound(state: GameState): void {
   for (const player of state.players) {
@@ -249,10 +297,21 @@ function resetBettingRound(state: GameState): void {
   }
   state.currentBet = 0;
   state.minRaise = state.config.bigBlind;
+  state.lastBetWasRaise = false;
+  // 标记刚重置过，防止 moveToNextPlayer 在 advancePhase 后立即错误触发 isBettingRoundComplete
+  state.justResetRound = true;
 }
 
 // 开始新手牌
 export function startNewHand(state: GameState): GameState {
+  // 重置本手状态（isVictory 和 isGameOver 必须重置，因为它们是"本手是否赢了"和"游戏是否已结束"的标志）
+  state.isVictory = false;
+  state.isGameOver = false;
+  state.winner = null;
+  state.lastPotWon = 0;
+  state.lastAIPotWon = 0;
+  state.isPlayerTurn = true; // 必须在 startNewHand 中重置，否则玩家永远失去操作权
+
   // 庄家移位
   state.dealerIndex = (state.dealerIndex + 1) % state.players.length;
 
@@ -267,6 +326,7 @@ export function startNewHand(state: GameState): GameState {
     player.isAllIn = false;
     player.currentBet = 0;
     player.hasActed = false;
+    player.totalBetInHand = 0;
   }
 
   // 重置公共牌
@@ -278,6 +338,8 @@ export function startNewHand(state: GameState): GameState {
   state.pot = 0;
   state.sidePots = [];
   state.currentBet = 0;
+  state.lastPotWon = 0;
+  state.lastAIPotWon = 0;
 
   // 洗牌并发牌
   state.deck = shuffleDeck(createDeck());
@@ -319,6 +381,7 @@ export function executePlayerAction(state: GameState, action: GameAction): GameS
       const callAmount = Math.min(getToCall(state, player), player.chips);
       player.chips -= callAmount;
       player.currentBet += callAmount;
+      player.totalBetInHand += callAmount;
       state.pot += callAmount;
       if (player.chips === 0) {
         player.isAllIn = true;
@@ -335,15 +398,18 @@ export function executePlayerAction(state: GameState, action: GameAction): GameS
         player.chips = 0;
         player.isAllIn = true;
         player.currentBet += allInAmount;
+        player.totalBetInHand += allInAmount;
         state.pot += allInAmount;
       } else {
         player.chips -= raiseAmount;
         player.currentBet += raiseAmount;
+        player.totalBetInHand += raiseAmount;
         state.pot += raiseAmount;
       }
 
       state.currentBet = player.currentBet;
       state.minRaise = getMinRaiseAmount(state);
+      state.lastBetWasRaise = true;
 
       // 重新设置其他玩家的 hasActed = false（因为有人加注，需要再次表态）
       for (const p of state.players) {
@@ -355,6 +421,7 @@ export function executePlayerAction(state: GameState, action: GameAction): GameS
 
     case 'all-in':
       const allInAmount = player.chips;
+      const previousBet = state.currentBet; // 记录加注前的最高注
       player.chips = 0;
       player.isAllIn = true;
       player.currentBet += allInAmount;
@@ -362,12 +429,16 @@ export function executePlayerAction(state: GameState, action: GameAction): GameS
 
       if (player.currentBet > state.currentBet) {
         state.currentBet = player.currentBet;
-        state.minRaise = getMinRaiseAmount(state);
 
-        // 有人全下且超过当前最高注，重新设置其他玩家的 hasActed
-        for (const p of state.players) {
-          if (!p.isFolded && !p.isAllIn && p.currentBet < state.currentBet) {
-            p.hasActed = false;
+        // 只有当全下增加量 >= minRaise 时才视为有效加注，重新开放表态
+        const betIncrease = player.currentBet - previousBet;
+        if (betIncrease >= state.minRaise) {
+          state.minRaise = getMinRaiseAmount(state);
+          state.lastBetWasRaise = true;
+          for (const p of state.players) {
+            if (!p.isFolded && !p.isAllIn && p.currentBet < state.currentBet) {
+              p.hasActed = false;
+            }
           }
         }
       }
@@ -417,6 +488,9 @@ export function executeAIAction(state: GameState): GameState {
 // 移动到下一个玩家
 function moveToNextPlayer(state: GameState): void {
   console.log('[moveToNextPlayer] actionIndex=', state.actionIndex, 'phase=', state.phase);
+  // 清除刚重置标记，任何对 moveToNextPlayer 的调用都说明重置已处理完毕
+  state.justResetRound = false;
+
   // 获取所有未弃牌玩家（包括全下的）
   const activePlayers = state.players.filter(p => !p.isFolded);
   console.log('[moveToNextPlayer] activePlayers count=', activePlayers.length);
@@ -426,7 +500,11 @@ function moveToNextPlayer(state: GameState): void {
     // 只有一个玩家了，赢得底池
     const winner = activePlayers[0];
     winner.chips += state.pot;
-    state.lastPotWon = winner.isAI ? 0 : state.pot;
+    if (winner.isAI) {
+      state.lastAIPotWon = state.pot;
+    } else {
+      state.lastPotWon = state.pot;
+    }
     state.pot = 0;
     endHand(state, winner);
     return;
@@ -536,11 +614,11 @@ function advancePhase(state: GameState): void {
   state.isPlayerTurn = !state.players[firstActor].isAI;
 }
 
-// 判定获胜者
+// 判定获胜者（支持边池分配）
 function determineWinner(state: GameState): void {
   const activePlayers = state.players.filter(p => !p.isFolded);
 
-  // 计算每个玩家的手牌强度（无论有多少活跃玩家都要填充showdownHands）
+  // 计算每个玩家的手牌强度
   state.showdownHands = activePlayers.map(player => ({
     player,
     hand: evaluateHand(player.holeCards, state.communityCards),
@@ -553,7 +631,6 @@ function determineWinner(state: GameState): void {
   const winner = state.showdownHands[0].player;
 
   if (activePlayers.length === 1) {
-    // 单玩家时仍然调用endHand，但showdownHands已经被填充
     endHand(state, winner);
     return;
   }
@@ -561,22 +638,90 @@ function determineWinner(state: GameState): void {
   endHand(state, winner);
 }
 
+// 分配边池：找出有资格竞争每个底池的玩家，然后分配给获胜者
+function distributePots(state: GameState): PotDistribution[] {
+  const activePlayers = state.players.filter(p => !p.isFolded);
+  const { mainPot, sidePots } = calculateSidePots(state);
+  const allPots = [mainPot, ...sidePots];
+
+  // 为每个玩家确定其最高能竞争的底池索引（基于总投入）
+  // 投入最少的玩家只能竞争主池（index 0），投入第二少的只能竞争主池+边池1（index 0-1），以此类推
+  const sortedByBet = [...activePlayers].sort((a, b) => a.totalBetInHand - b.totalBetInHand);
+  const playerEligibleUpTo: Map<string, number> = new Map();
+  sortedByBet.forEach((player, i) => {
+    // 投入第 i 少的玩家（i=0最少），最多能竞争到 index = allPots.length - 1 - i 的底池
+    // sorted=[A(100),H(200),B(300)], length=3: i=0→A eligibleUpTo=2, i=1→H eligibleUpTo=1, i=2→B eligibleUpTo=0
+    // 投入越多的玩家能参与越大的边池（eligibleUpTo 越大）
+    playerEligibleUpTo.set(player.id, allPots.length - 1 - i);
+  });
+
+  const distributions: PotDistribution[] = [];
+
+  // 从最大的边池开始分配（最大的边池是投入最多的玩家形成的）
+  for (let potIndex = allPots.length - 1; potIndex >= 0; potIndex--) {
+    const potSize = allPots[potIndex];
+    if (potSize <= 0) continue;
+
+    // 找出有资格竞争此底池的玩家（eligibleUpTo >= potIndex）
+    const eligible = state.showdownHands.filter(({ player }) => {
+      const maxIdx = playerEligibleUpTo.get(player.id) ?? 0;
+      return maxIdx >= potIndex;
+    });
+
+    if (eligible.length === 0) continue;
+
+    // 取最强手牌（已排序，第一个是最强的）
+    const bestHand = eligible[0];
+    const winners = eligible.filter(
+      ({ hand }) => compareHands(hand, bestHand.hand) === 0
+    );
+
+    // 平分底池
+    const share = Math.floor(potSize / winners.length);
+    for (const { player } of winners) {
+      distributions.push({ player, amount: share });
+    }
+    // 余数归第一个赢家（实际中余数很小，这里简化处理）
+    if (winners.length > 0 && potSize % winners.length !== 0) {
+      distributions[0].amount += potSize - distributions.reduce((s, d) => s + d.amount, 0);
+    }
+  }
+
+  return distributions;
+}
+
 // 结束手牌
 function endHand(state: GameState, winner: Player): void {
   state.phase = 'END';
 
-  // 如果有人赢得了底池
+  // 计算并分配底池
   if (state.pot > 0) {
-    winner.chips += state.pot;
-    state.lastPotWon = winner.isAI ? 0 : state.pot;
+    const distributions = distributePots(state);
+    for (const { player, amount } of distributions) {
+      if (amount > 0) {
+        player.chips += amount;
+        if (!player.isAI) {
+          state.lastPotWon += amount;
+        } else {
+          state.lastAIPotWon += amount;
+        }
+      }
+    }
     state.pot = 0;
   }
 
+  // 在 UI 显示 lastPotWon 之后再重置（由 startNewHand 完全重置）
+  // 注意：保留 lastPotWon 到本局结束，供 UI 显示 "Result" 使用
+
   // 更新统计
   state.handCount++;
-  if (!winner.isAI) {
+  // 使用 lastPotWon 判断玩家是否赢了（而不是 winner.isAI），因为边池情况下
+  // winner 可能是 AI 但玩家仍从自己的边池份额中赢钱
+  if (state.lastPotWon > 0) {
     state.totalProfit += state.lastPotWon;
     state.isVictory = true;
+  } else {
+    state.isVictory = false;
   }
 
   // 检查游戏是否结束（玩家破产）
@@ -624,7 +769,7 @@ export function getAvailableActions(state: GameState): {
 
 // 获取对手信息
 export function getOpponentInfo(state: GameState) {
-  return state.players.slice(1).map((ai, index) => ({
+  return state.players.slice(1).map((ai) => ({
     ...ai,
     description: ai.personality && ai.level ? getPersonalityDescription(ai.personality, ai.level) : '',
     handStrength: ai.holeCards.length > 0 ? evaluateHand(ai.holeCards, state.communityCards) : null

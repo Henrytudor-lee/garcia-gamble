@@ -24,7 +24,7 @@ export function PokerTable() {
   const prevCommunityCountRef = useRef(0);
   const [newCommunityCardIndex, setNewCommunityCardIndex] = useState(-1);
 
-  const { players, communityCards, pot, phase, isPlayerTurn, isGameOver, isVictory, handCount, lastPotWon, showdownHands } = gameState;
+  const { players, communityCards, pot, phase, isPlayerTurn, isGameOver, isVictory, handCount, lastPotWon, lastAIPotWon, showdownHands } = gameState;
   const player = players[0];
   
   // 添加日志的内部函数
@@ -189,7 +189,7 @@ export function PokerTable() {
       if (phase === 'END') {
         const winner = showdownHands[0]?.player;
         if (winner) {
-          addLog('System', winner.isAI ? `AI Wins $${lastPotWon}` : `You Win $${lastPotWon}`, undefined, true);
+          addLog('System', winner.isAI ? `AI Wins $${lastAIPotWon}` : `You Win $${lastPotWon}`, undefined, true);
         }
       }
 
@@ -204,14 +204,16 @@ export function PokerTable() {
     }
 
     // 记录盲注（每次进入 PRE_FLOP 时）
-    if (phase === 'PRE_FLOP' && (prevPhase === 'SETUP' || prevPhase === 'END')) {
-      const sb = gameState.players[gameState.smallBlindIndex];
-      const bb = gameState.players[gameState.bigBlindIndex];
-      if (sb && bb) {
-        addLog(sb.name, `Small Blind $${gameState.config.smallBlind}`, undefined, true);
-        addLog(bb.name, `Big Blind $${gameState.config.bigBlind}`, undefined, true);
-      }
+  // 按德扑规则：BB 先下，SB 后下（BB 行动序在 SB 之前）
+  if (phase === 'PRE_FLOP' && (prevPhase === 'SETUP' || prevPhase === 'END')) {
+    const sb = gameState.players[gameState.smallBlindIndex];
+    const bb = gameState.players[gameState.bigBlindIndex];
+    if (sb && bb) {
+      // BB 在前，SB 在后
+      addLog(bb.name, `Big Blind $${gameState.config.bigBlind}`, undefined, true);
+      addLog(sb.name, `Small Blind $${gameState.config.smallBlind}`, undefined, true);
     }
+  }
 
     prevPhaseRef.current = phase;
   }, [phase, addLog, gameState, showdownHands, lastPotWon, communityCards.length]);
@@ -499,10 +501,14 @@ export function PokerTable() {
                 {phase === 'END' ? (
                   <div className="space-y-1">
                     <h2 className="text-4xl font-black font-headline text-primary">
-                      {isVictory ? 'VICTORY!' : 'GAME OVER'}
+                      {isVictory ? 'VICTORY!' : isGameOver ? 'GAME OVER' : 'HAND LOST'}
                     </h2>
                     <p className="text-on-surface-variant text-sm">
-                      {isVictory ? `You won $${lastPotWon.toLocaleString()}!` : 'Your chips have run out.'}
+                      {isVictory
+                        ? `You won $${lastPotWon.toLocaleString()}!`
+                        : isGameOver
+                          ? 'Your chips have run out.'
+                          : 'You lost this hand.'}
                     </p>
                   </div>
                 ) : (
